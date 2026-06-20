@@ -73,7 +73,6 @@ import type { Api, Model } from "@earendil-works/pi-ai";
 import {
 	SelectList,
 	decodeKittyPrintable,
-	Key,
 	matchesKey,
 	type EditorTheme,
 	type SelectItem,
@@ -417,7 +416,7 @@ export default function modesExtension(pi: ExtensionAPI): void {
 	 * clears the query (or closes the overlay if the query is already empty).
 	 * Up/Down/Enter are passed through to the list for navigation and confirm.
 	 *
-	 * Shared by the `/mode` command (no-arg form) and the Ctrl+M shortcut.
+	 * Used by the `/mode` command (no-arg form).
 	 */
 	async function openModeSelector(ctx: ExtensionContext): Promise<void> {
 		if (modes.length === 0) return;
@@ -518,17 +517,7 @@ export default function modesExtension(pi: ExtensionAPI): void {
 				return;
 			}
 
-			// No argument: open the searchable selector (shared with Ctrl+M).
-			await openModeSelector(ctx);
-		},
-	});
-
-	// Ctrl+M opens the mode selector. Note: on legacy terminals without the
-	// Kitty keyboard protocol, Ctrl+M is indistinguishable from Enter and the
-	// shortcut will not fire — use `/mode` instead, or remap in keybindings.json.
-	pi.registerShortcut(Key.ctrl("m"), {
-		description: "Open the mode selector",
-		handler: async (ctx) => {
+			// No argument: open the searchable selector.
 			await openModeSelector(ctx);
 		},
 	});
