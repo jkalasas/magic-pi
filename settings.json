@@ -14,6 +14,6 @@
   "defaultProvider": "fireworks",
   "defaultModel": "accounts/fireworks/models/glm-5p2",
   "defaultThinkingLevel": "xhigh",
-  "theme": "pompom",
+  "theme": "dark",
   "hideThinkingBlock": false
 }
