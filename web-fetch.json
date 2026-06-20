@@ -1,0 +1,4 @@
+{
+  "model": "ollama/deepseek-v4-flash:cloud",
+  "thinkingLevel": "xhigh"
+}

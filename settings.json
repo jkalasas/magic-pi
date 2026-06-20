@@ -1,0 +1,19 @@
+{
+  "lastChangelogVersion": "0.79.6",
+  "npmCommand": [
+    "bun"
+  ],
+  "packages": [
+    "npm:@tintinweb/pi-subagents",
+    "npm:pi-mcp-adapter",
+    "npm:pi-web-access",
+    "npm:pi-rewind",
+    "npm:pi-token-speed",
+    "npm:context-mode"
+  ],
+  "defaultProvider": "fireworks",
+  "defaultModel": "accounts/fireworks/models/glm-5p2",
+  "defaultThinkingLevel": "xhigh",
+  "theme": "pompom",
+  "hideThinkingBlock": false
+}
