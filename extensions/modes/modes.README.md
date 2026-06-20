@@ -67,6 +67,7 @@ injects nothing.
 | Action                  | Effect                                           |
 |-------------------------|--------------------------------------------------|
 | `Tab` (empty editor)    | Cycle to the next mode. Autocomplete still works when the editor has text or a dropdown is open. |
+| `Ctrl+M`                | Open the mode selector (same as `/mode`).        |
 | `/mode`                 | Open the mode selector.                          |
 | `/mode <name>`          | Switch to a specific mode directly.              |
 | `/mode pi`              | Return to default pi behavior.                   |
@@ -74,6 +75,16 @@ injects nothing.
 
 > The CLI flag is `--agent-mode` (not `--mode`) because pi already uses `--mode`
 > for output mode (text/json/rpc).
+>
+> **Ctrl+M caveat:** on legacy terminals without the Kitty keyboard protocol,
+> `Ctrl+M` is indistinguishable from `Enter` and the shortcut will not fire —
+> use `/mode` instead, or remap the shortcut in `keybindings.json` (e.g. to
+> `ctrl+shift+m`).
+
+The mode selector has a **type-to-filter search input** at the top. Typing
+filters the list by mode-name prefix; `Backspace` edits the query, `Esc` clears
+the query (or closes the selector if the query is empty), and `Up`/`Down`/`Enter`
+navigate and confirm.
 
 ## Examples
 

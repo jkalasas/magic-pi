@@ -72,6 +72,8 @@ import {
 import type { Api, Model } from "@earendil-works/pi-ai";
 import {
 	SelectList,
+	decodeKittyPrintable,
+	Key,
 	matchesKey,
 	type EditorTheme,
 	type SelectItem,
@@ -393,8 +395,116 @@ export default function modesExtension(pi: ExtensionAPI): void {
 		applyMode(next, ctx);
 	}
 
-	// Wire the cycle function used by the editor wrapper. ctx is captured in
-	// the session_start editor-factory closure below.
+	/**
+	 * Build the SelectItem list for the mode selector, marking the active mode.
+	 */
+	function modeSelectorItems(): SelectItem[] {
+		return modes.map((m) => {
+			const isActive = m.name.toLowerCase() === activeMode.name.toLowerCase();
+			return {
+				value: m.name,
+				label: isActive ? `${MODE_INDICATOR} ${m.name}` : m.name,
+				description: m.description,
+			};
+		});
+	}
+
+	/**
+	 * Open the mode selector overlay with a type-to-filter search input.
+	 *
+	 * The search input sits above the list. Typing filters the list by mode
+	 * name prefix (SelectList.setFilter), Backspace edits the query, and Esc
+	 * clears the query (or closes the overlay if the query is already empty).
+	 * Up/Down/Enter are passed through to the list for navigation and confirm.
+	 *
+	 * Shared by the `/mode` command (no-arg form) and the Ctrl+M shortcut.
+	 */
+	async function openModeSelector(ctx: ExtensionContext): Promise<void> {
+		if (modes.length === 0) return;
+		const items = modeSelectorItems();
+
+		const result = await ctx.ui.custom<string | null>((tui, theme, _kb, done) => {
+			const selectList = new SelectList(items, Math.min(items.length, 12), {
+				selectedPrefix: (text) => theme.fg("accent", text),
+				selectedText: (text) => theme.fg("accent", text),
+				description: (text) => theme.fg("muted", text),
+				scrollInfo: (text) => theme.fg("dim", text),
+				noMatch: (text) => theme.fg("warning", text),
+			});
+
+			selectList.onSelect = (item) => done(item.value);
+			selectList.onCancel = () => done(null);
+
+			let filter = "";
+
+			const renderSearchLine = (width: number): string => {
+				const promptLabel = "Search: ";
+				const prompt = theme.fg("muted", promptLabel);
+				const cursor = "\x1b[7m \x1b[27m"; // reverse-video block
+				const visibleLen = promptLabel.length + filter.length + 1; // +1 for cursor
+				const pad = " ".repeat(Math.max(0, width - visibleLen));
+				return `${prompt}${filter}${cursor}${pad}`;
+			};
+
+			const setFilter = (next: string) => {
+				filter = next;
+				selectList.setFilter(filter);
+				tui.requestRender();
+			};
+
+			return {
+				render(width: number) {
+					return [renderSearchLine(width), ...selectList.render(width)];
+				},
+				invalidate() {
+					selectList.invalidate();
+				},
+				handleInput(data: string) {
+					// Esc clears the query if non-empty, otherwise cancels.
+					if (matchesKey(data, "escape")) {
+						if (filter.length > 0) {
+							setFilter("");
+							return;
+						}
+						selectList.handleInput(data); // fires onCancel
+						tui.requestRender();
+						return;
+					}
+
+					// Backspace trims the query.
+					if (matchesKey(data, "backspace")) {
+						if (filter.length > 0) setFilter(filter.slice(0, -1));
+						return;
+					}
+
+					// Kitty CSI-u printable character.
+					const kitty = decodeKittyPrintable(data);
+					if (kitty !== undefined) {
+						setFilter(filter + kitty);
+						return;
+					}
+
+					// Regular printable character (reject control bytes).
+					const hasControl = [...data].some((ch) => {
+						const code = ch.charCodeAt(0);
+						return code < 32 || code === 0x7f || (code >= 0x80 && code <= 0x9f);
+					});
+					if (!hasControl && data.length > 0) {
+						setFilter(filter + data);
+						return;
+					}
+
+					// Everything else (Up/Down/Enter/...) goes to the list.
+					selectList.handleInput(data);
+					tui.requestRender();
+				},
+			};
+		});
+
+		if (!result) return;
+		const target = modes.find((m) => m.name === result);
+		if (target) applyMode(target, ctx);
+	}
 
 	// --- commands -----------------------------------------------------------
 
@@ -408,49 +518,18 @@ export default function modesExtension(pi: ExtensionAPI): void {
 				return;
 			}
 
-			// No argument: open a selector.
-			if (modes.length === 0) return;
+			// No argument: open the searchable selector (shared with Ctrl+M).
+			await openModeSelector(ctx);
+		},
+	});
 
-			const items: SelectItem[] = modes.map((m) => {
-				const isActive = m.name.toLowerCase() === activeMode.name.toLowerCase();
-				return {
-					value: m.name,
-					label: isActive ? `${MODE_INDICATOR} ${m.name}` : m.name,
-					description: m.description,
-				};
-			});
-
-			const result = await ctx.ui.custom<string | null>((tui, theme, _kb, done) => {
-				const selectList = new SelectList(items, Math.min(items.length, 12), {
-					selectedPrefix: (text) => theme.fg("accent", text),
-					selectedText: (text) => theme.fg("accent", text),
-					description: (text) => theme.fg("muted", text),
-					scrollInfo: (text) => theme.fg("dim", text),
-					noMatch: (text) => theme.fg("warning", text),
-				});
-
-				selectList.onSelect = (item) => done(item.value);
-				selectList.onCancel = () => done(null);
-
-				return {
-					render(width: number) {
-						return selectList.render(width);
-					},
-					invalidate() {
-						selectList.invalidate();
-					},
-					handleInput(data: string) {
-						selectList.handleInput(data);
-						tui.requestRender();
-					},
-				};
-			});
-
-			if (!result) return;
-			const target = modes.find((m) => m.name === result);
-			if (target) {
-				applyMode(target, ctx);
-			}
+	// Ctrl+M opens the mode selector. Note: on legacy terminals without the
+	// Kitty keyboard protocol, Ctrl+M is indistinguishable from Enter and the
+	// shortcut will not fire — use `/mode` instead, or remap in keybindings.json.
+	pi.registerShortcut(Key.ctrl("m"), {
+		description: "Open the mode selector",
+		handler: async (ctx) => {
+			await openModeSelector(ctx);
 		},
 	});
 
