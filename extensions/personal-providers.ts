@@ -27,9 +27,6 @@ export default function (pi: ExtensionAPI) {
 		api: "openai-completions",
 		// Resolved from auth.json["neuralwatt"] first, then this env fallback.
 		apiKey: "$NEURALWATT_API_KEY",
-		compat: {
-			supportsDeveloperRole: false,
-		},
 		models: [
 			{
 				id: "glm-5.2",
@@ -45,6 +42,9 @@ export default function (pi: ExtensionAPI) {
 					high: null,
 					xhigh: "xhigh",
 				},
+				compat: {
+					supportsDeveloperRole: false,
+				},
 			},
 			{
 				id: "kimi-k2.7-code",
@@ -59,6 +59,9 @@ export default function (pi: ExtensionAPI) {
 					medium: null,
 					high: "high",
 					xhigh: null,
+				},
+				compat: {
+					supportsDeveloperRole: false,
 				},
 			},
 		],
@@ -84,6 +87,9 @@ export default function (pi: ExtensionAPI) {
 					medium: null,
 					high: null,
 					xhigh: "xhigh",
+				},
+				compat: {
+					supportsDeveloperRole: false,
 				},
 			},
 		],
