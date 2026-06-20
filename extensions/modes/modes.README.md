@@ -95,6 +95,13 @@ This extension ships with these modes in `modes/`:
   pattern analysis → hypothesis & minimal test → implementation & hardening.
   Full tool access (investigate AND fix), `thinking: high`, uses Explore
   subagents and context-mode tools for evidence gathering.
+- **`review`** — code review of an existing scope (the magic-review
+  discipline, adapted as a mode). Four phases: discovery → triage →
+  verification → final report. Read-only (`disabled-tools: edit, write`),
+  `thinking: high`. Dispatches Explore subagents for discovery and one
+  general-purpose verifier subagent per triaged issue (template at
+  `skills/issue-verifier-prompt.md`); reports only issues that survive
+  verification.
 
 Add your own by dropping a `.md` file into `modes/` and running `/reload`.
 
@@ -215,6 +222,42 @@ via `{{agent_dir}}`. When the root cause + minimal fix are clear but the fix
 is broad or needs a design decision, DEBUG mode tells the user to switch to
 BUILD (`/mode build`) or BRAINSTORM (`/mode brainstorm`).
 
+## The `review` mode flow
+
+`review` is the magic-review discipline adapted to run as a pi mode (injected
+every turn while active). It reviews an EXISTING scope and reports real issues —
+it does not fix them.
+
+1. **Phase 1 — Discovery:** parse the scope (module, feature, directory,
+   concept, or diff/PR). If ambiguous, pick the most likely interpretation and
+   state the assumption. Find relevant files (`find`, `grep`, `git diff`/`git
+   log` for PRs), read each, and identify responsibilities — including what
+   depends on the code under review. Dispatch **Explore** subagents for broad
+   areas. Use `ctx_execute_file` for very large files.
+2. **Phase 2 — Triage:** scan all discovered files and list POTENTIAL issues
+   across four categories only — **correctness, security, performance,
+   architecture**. No style/nits/positive feedback. Each issue gets a category,
+   `file:line`, and a claim. False positives are expected here; Phase 3 filters
+   them. If nothing is found, skip to the summary.
+3. **Phase 3 — Verification:** for EACH triaged issue, dispatch an independent
+   **general-purpose** verifier subagent (one per issue, in parallel) using
+   `extensions/modes/skills/issue-verifier-prompt.md`. Each verifier receives
+   ONLY its single issue, reads the actual code, traces the call path, and
+   returns CONFIRMED / REFUTED / UNDETERMINED. The controller spot-checks
+   verdicts against the real code before promoting them.
+4. **Phase 4 — Final Report:** aggregate and report only confirmed issues
+   (with evidence + a recommended fix), refuted issues (with why), undetermined
+   ones (with what's missing), and a one-paragraph summary noting any systemic
+   patterns.
+
+`review` is read-only (`disabled-tools: edit, write`, `thinking: high`). The
+controller never edits; verifiers are read-only by instruction. Confirmed
+issues are handed off to BUILD (surgical fix), DEBUG (a confirmed correctness
+issue that's a live bug), BRAINSTORM (an architecture finding needing design),
+or ORCHESTRATOR (several independent fixes). REVIEW reviews existing code with
+fresh eyes — it is not a pre-merge gate for your own in-progress work (use a
+`requesting-code-review` subagent or ORCHESTRATOR's built-in review for that).
+
 ## The `brainstorm` mode flow
 
 `brainstorm` is a design → spec → plan mode (adapted from the superpowers
@@ -243,5 +286,8 @@ with the other modes the read-only guarantee on the codebase is prompt-enforced.
 - `extensions/modes/skills/root-cause-tracing.md`, `defense-in-depth.md`,
   `condition-based-waiting.md`, `find-polluter.sh` — debugging techniques used
   by `debug` mode
+- `extensions/modes/skills/issue-verifier-prompt.md` — Phase 3 verification
+  subagent prompt template used by `review` mode
 - `modes/plan.md`, `modes/brainstorm.md`, `modes/build.md`,
-  `modes/orchestrator.md`, `modes/ask.md`, `modes/debug.md` — modes
+  `modes/orchestrator.md`, `modes/ask.md`, `modes/debug.md`, `modes/review.md`
+  — modes
