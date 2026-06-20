@@ -25,7 +25,7 @@ magic-pi/
 ├── extensions/                # TypeScript extensions loaded by pi
 │   ├── personal-providers.ts  # custom model providers (Fireworks gateway, NeuralWatt, Featherless)
 │   ├── service-priorities.ts  # startup model selection by priority tier
-│   ├── magic-todo.ts          # in-session todo tool + /todos command
+│   ├── magic-todo.ts          # session-persisted todo tool + /todos command (tree-aware)
 │   ├── auxiliary-vision/      # describe_image tool for non-vision models
 │   └── modes/                 # the modes extension + its bundled skills
 │       ├── index.ts
@@ -86,7 +86,7 @@ Current ranking (`service_priorities.json`):
 Adds a `describe_image` tool that delegates to a vision-capable model when the active model can't process images. The tool auto-shows/hides on model switch based on whether the active model declares `image` input. Configured via `vision-settings.json` (currently `opencode-go/mimo-v2.5`). Supported formats: PNG, JPG, JPEG, GIF, WebP, BMP, SVG, TIFF.
 
 ### `magic-todo.ts`
-A temporary, in-memory todo list scoped to the current session (not persisted). Exposes a `todo` tool for the LLM and a `/todos` slash command for the user. Resets on new session / reload.
+A session-scoped todo list whose state is persisted in tool-result details (in the session file). Exposes a `todo` tool for the LLM (actions: list, add, toggle, delete, clear) and a `/todos` slash command for the user. State is reconstructed from the current branch on load, reload, resume, fork, and `/tree` navigation, so going back to an earlier point in the conversation tree reverts the todos to that point. `/new` starts empty.
 
 ### `modes/`
 The flagship extension: switchable agent modes (opencode-style Plan/Build, plus more). See `extensions/modes/modes.README.md` for the full spec. Ships with these modes in `modes/`:
@@ -123,6 +123,8 @@ Usage: `Tab` (empty editor) cycles modes · `/mode` opens the selector · `/mode
    pi
    ```
 4. **(Optional) trust directories** via `/trust` so pi can edit them — recorded in `trust.json` (gitignored).
+
+## What's shared vs. private
 
 ## What's shared vs. private
 

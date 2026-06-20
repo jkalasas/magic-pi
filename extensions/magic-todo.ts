@@ -1,9 +1,9 @@
 /**
  * Magic Todo Extension
  *
- * A temporary, in-memory todo list scoped to the current pi session.
- * - Todos are NOT persisted to the session file or disk.
- * - State lives in the extension's runtime and resets on new session / reload.
+ * A session-scoped todo list whose state is persisted in tool-result details.
+ * - State is reconstructed from the current branch on load, reload, resume,
+ *   fork, and /tree navigation, so navigating back in the tree reverts todos.
  * - Provides a `todo` tool for the LLM and a `/todos` slash command for users.
  */
 
@@ -19,14 +19,14 @@ interface Todo {
 }
 
 interface TodoDetails {
-	action: "list" | "add" | "toggle" | "clear";
+	action: "list" | "add" | "toggle" | "delete" | "clear";
 	todos: Todo[];
 	nextId: number;
 	error?: string;
 }
 
 const TodoParams = Type.Object({
-	action: StringEnum(["list", "add", "toggle", "clear"] as const),
+	action: StringEnum(["list", "add", "toggle", "delete", "clear"] as const),
 	text: Type.Optional(Type.String({ description: "Todo text (required for add)" })),
 	id: Type.Optional(Type.Number({ description: "Todo ID (required for toggle)" })),
 });
@@ -107,7 +107,7 @@ class TodoListComponent {
 }
 
 export default function (pi: ExtensionAPI) {
-	// In-memory state only — intentionally not persisted across sessions/reloads.
+	// In-memory state, reconstructed from tool-result details on the current branch.
 	let todos: Todo[] = [];
 	let nextId = 1;
 
@@ -129,23 +129,35 @@ export default function (pi: ExtensionAPI) {
 		ctx.ui.setWidget("magic-todo", lines, { placement: "aboveEditor" });
 	};
 
-	pi.on("session_start", async (_event, ctx) => {
-		// Reset state to guarantee the session-scoped, temporary behavior.
+	const reconstructState = (ctx: ExtensionContext) => {
 		todos = [];
 		nextId = 1;
+		for (const entry of ctx.sessionManager.getBranch()) {
+			if (entry.type !== "message") continue;
+			const msg = entry.message;
+			if (msg.role !== "toolResult" || msg.toolName !== "todo") continue;
+			const details = msg.details as TodoDetails | undefined;
+			if (details) {
+				todos = details.todos;
+				nextId = details.nextId;
+			}
+		}
 		updateWidget(ctx);
-	});
+	};
+
+	pi.on("session_start", async (_event, ctx) => reconstructState(ctx));
+	pi.on("session_tree", async (_event, ctx) => reconstructState(ctx));
 
 	pi.registerTool({
 		name: "todo",
 		label: "Todo",
 		description:
-			"Manage a temporary, in-memory todo list for this session only. Actions: list, add (text), toggle (id), clear",
+			"Manage a todo list for this session. Actions: list, add (text), toggle (id), delete (id), clear",
 		parameters: TodoParams,
-		promptSnippet: "Manage a temporary todo list for the current session",
+		promptSnippet: "Manage a todo list for the current session",
 		promptGuidelines: [
-			"Use the todo tool when the user wants to create, view, or manage a temporary todo list for the current session.",
-			"The todo tool is ephemeral and does not persist across sessions or reloads.",
+			"Use the todo tool when the user wants to create, view, or manage a todo list for the current session.",
+			"The todo tool state is persisted in the session and reverts when navigating the conversation tree.",
 		],
 
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
@@ -214,6 +226,40 @@ export default function (pi: ExtensionAPI) {
 					return {
 						content: [{ type: "text", text: `Todo #${todo.id} ${todo.done ? "completed" : "uncompleted"}` }],
 						details: { action: "toggle", todos: [...todos], nextId } as TodoDetails,
+					};
+				}
+
+				case "delete": {
+					if (params.id === undefined) {
+						updateWidget(ctx);
+						return {
+							content: [{ type: "text", text: "Error: id is required for delete" }],
+							details: {
+								action: "delete",
+								todos: [...todos],
+								nextId,
+								error: "id required",
+							} as TodoDetails,
+						};
+					}
+					const target = todos.find((t) => t.id === params.id);
+					if (!target) {
+						updateWidget(ctx);
+						return {
+							content: [{ type: "text", text: `Todo #${params.id} not found` }],
+							details: {
+								action: "delete",
+								todos: [...todos],
+								nextId,
+								error: `#${params.id} not found`,
+							} as TodoDetails,
+						};
+					}
+					todos = todos.filter((t) => t.id !== params.id);
+					updateWidget(ctx);
+					return {
+						content: [{ type: "text", text: `Deleted todo #${params.id}` }],
+						details: { action: "delete", todos: [...todos], nextId } as TodoDetails,
 					};
 				}
 
@@ -293,6 +339,12 @@ export default function (pi: ExtensionAPI) {
 				}
 
 				case "toggle": {
+					const text = result.content[0];
+					const msg = text?.type === "text" ? text.text : "";
+					return new Text(theme.fg("success", "✓ ") + theme.fg("muted", msg), 0, 0);
+				}
+
+				case "delete": {
 					const text = result.content[0];
 					const msg = text?.type === "text" ? text.text : "";
 					return new Text(theme.fg("success", "✓ ") + theme.fg("muted", msg), 0, 0);
