@@ -33,6 +33,7 @@ export default function (pi: ExtensionAPI) {
 				name: "GLM 5.2",
 				input: ["text"],
 				reasoning: true,
+				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
 				contextWindow: 1000000,
 				maxTokens: 131072,
 				thinkingLevelMap: {
@@ -51,6 +52,7 @@ export default function (pi: ExtensionAPI) {
 				name: "Kimi K2.7 Code",
 				input: ["text", "image"],
 				reasoning: true,
+				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
 				contextWindow: 256000,
 				maxTokens: 200000,
 				thinkingLevelMap: {
@@ -79,6 +81,7 @@ export default function (pi: ExtensionAPI) {
 				name: "GLM 5.2",
 				input: ["text"],
 				reasoning: true,
+				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
 				contextWindow: 256000,
 				maxTokens: 131072,
 				thinkingLevelMap: {
