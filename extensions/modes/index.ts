@@ -53,6 +53,7 @@
  *   - /mode             open the mode selector
  *   - /mode <name>      switch to a specific mode directly
  *   - /mode pi          return to default pi behavior
+ *   - /btw              open a side-chat modal (separate ask-mode sub-session)
  *   - --agent-mode <name>     start in a mode (CLI flag)
  *
  * This extension lives in a folder (`extensions/modes/`) so it can bundle its
@@ -78,6 +79,7 @@ import {
 	type SelectItem,
 	type TUI,
 } from "@earendil-works/pi-tui";
+import { openBtwModal } from "./btw.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -506,6 +508,13 @@ export default function modesExtension(pi: ExtensionAPI): void {
 	}
 
 	// --- commands -----------------------------------------------------------
+
+	pi.registerCommand("btw", {
+		description: "Open a side-chat modal (separate ask-mode sub-session) seeded with the current session.",
+		handler: async (_args, ctx) => {
+			await openBtwModal(ctx);
+		},
+	});
 
 	pi.registerCommand("mode", {
 		description: "Switch agent mode (e.g. /mode brainstorm). Run without args for a selector.",

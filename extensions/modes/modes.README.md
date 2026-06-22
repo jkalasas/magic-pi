@@ -71,6 +71,7 @@ injects nothing.
 | `/mode`                 | Open the mode selector.                          |
 | `/mode <name>`          | Switch to a specific mode directly.              |
 | `/mode pi`              | Return to default pi behavior.                   |
+| `/btw`                  | Open a side-chat modal (separate ask-mode sub-session seeded with the current session). |
 | `--agent-mode <name>`   | Start pi in a mode (CLI flag).                   |
 
 > The CLI flag is `--agent-mode` (not `--mode`) because pi already uses `--mode`
@@ -85,6 +86,39 @@ The mode selector has a **type-to-filter search input** at the top. Typing
 filters the list by mode-name prefix; `Backspace` edits the query, `Esc` clears
 the query (or closes the selector if the query is empty), and `Up`/`Down`/`Enter`
 navigate and confirm.
+
+## `/btw` — side chat
+
+`/btw` opens a floating overlay modal containing a separate pi sub-session
+running in **ask mode**. It is a throwaway conversation you can use to ask
+"by the way" questions about the work in progress without polluting the main
+session's context.
+
+What happens when you run `/btw`:
+
+1. A compact transcript of the current session (last ~12 user/assistant text
+   messages, each truncated) is written to a temp file.
+2. A separate `pi --mode rpc --no-session --agent-mode ask` subprocess is
+   spawned with that transcript appended to its system prompt. The sub-session
+   inherits the current model and working directory.
+3. An overlay modal opens with a scrollable transcript and a single-line input.
+
+In the modal:
+
+| Key         | Effect                                                   |
+|-------------|----------------------------------------------------------|
+| `Enter`     | Send the typed prompt to the sub-session.                |
+| `Esc`       | Abort a streaming response; if idle, close the modal.    |
+| `Up`/`Down` | Scroll the transcript (only when idle).                  |
+
+Responses stream into the transcript live. Tool calls the sub-session makes
+(read, grep, etc. — ask mode is read-only) are shown as `→ toolName` lines.
+The sub-session is killed and the temp file cleaned up when the modal closes.
+
+The sub-session is a fully isolated pi process: it has its own context window,
+does not touch the main session file, and cannot block on dialogs (any
+`extension_ui_request` it raises is auto-dismissed). Closing the modal ends
+the side chat; running `/btw` again starts a fresh one.
 
 ## Examples
 
@@ -293,6 +327,7 @@ with the other modes the read-only guarantee on the codebase is prompt-enforced.
 ## Files
 
 - `extensions/modes/index.ts` — the extension
+- `extensions/modes/btw.ts` — `/btw` side-chat modal (RPC sub-session client + overlay UI)
 - `extensions/modes/skills/writing.md` — writing skill used by `brainstorm` mode
 - `extensions/modes/skills/root-cause-tracing.md`, `defense-in-depth.md`,
   `condition-based-waiting.md`, `find-polluter.sh` — debugging techniques used
