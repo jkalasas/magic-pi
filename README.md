@@ -23,7 +23,12 @@ magic-pi/
 ├── sessions/                  # (gitignored) session transcripts
 │
 ├── extensions/                # TypeScript extensions loaded by pi
-│   ├── personal-providers.ts  # custom model providers (Fireworks gateway, NeuralWatt, Featherless)
+│   ├── providers/             # custom model providers (one file per provider)
+│   │   ├── index.ts           #   entry: registers fireworks/inference/neuralwatt/featherless
+│   │   ├── fireworks.ts       #   Fireworks via Cloudflare AI Gateway (models in models.json)
+│   │   ├── inference.ts       #   Fireworks via Cloudflare AI Gateway, custom-inference route
+│   │   ├── neuralwatt.ts      #   NeuralWatt OpenAI-compatible endpoint
+│   │   └── featherless.ts     #   Featherless OpenAI-compatible endpoint
 │   ├── service-priorities.ts  # startup model selection by priority tier
 │   ├── magic-todo.ts          # session-persisted todo tool + /todos command (tree-aware)
 │   ├── auxiliary-vision/      # describe_image tool for non-vision models
@@ -62,13 +67,14 @@ magic-pi/
 - `pi-token-speed` — token streaming/perf tooling
 - `context-mode` — context-window preserving tools (`ctx_execute`, `ctx_search`, ...)
 
-## Model providers (`extensions/personal-providers.ts` + `models.json`)
+## Model providers (`extensions/providers/` + `models.json`)
 
-Three providers are registered:
+Each provider lives in its own file under `extensions/providers/`, and `index.ts` registers them all:
 
-- **Fireworks** — routed through a Cloudflare AI Gateway (`baseUrl` only; model catalog lives in `models.json`). Models: GLM 5.2, Deepseek V4 Pro, GLM 5.1 (fast router), Deepseek V4 Flash, Kimi K2.7 Code.
-- **NeuralWatt** — OpenAI-compatible endpoint (`api.neuralwatt.com`). API key from `auth.json["neuralwatt"]` or `NEURALWATT_API_KEY`. Models: GLM 5.2, Kimi K2.7 Code.
-- **Featherless** — OpenAI-compatible endpoint (`api.featherless.ai`). API key from `auth.json["featherless"]` or `FEATHERLESS_API_KEY`. Model: GLM 5.2.
+- **Fireworks** (`fireworks.ts`) — routed through a Cloudflare AI Gateway (`baseUrl` only; model catalog lives in `models.json`). Models: GLM 5.2, Deepseek V4 Pro, GLM 5.1 (fast router), Deepseek V4 Flash, Kimi K2.7 Code.
+- **Inference** (`inference.ts`) — Fireworks via the Cloudflare AI Gateway's custom-inference route. API key from `auth.json["inference"]` or `INFERENCE_API_KEY`. Models: GLM-5.2, Kimi K2.6, Kimi K2.7 Code, Qwen 3.7 Plus, DeepSeek-V4-Pro, DeepSeek-V4-Flash.
+- **NeuralWatt** (`neuralwatt.ts`) — OpenAI-compatible endpoint (`api.neuralwatt.com`). API key from `auth.json["neuralwatt"]` or `NEURALWATT_API_KEY`. Models: GLM 5.2, Kimi K2.7 Code.
+- **Featherless** (`featherless.ts`) — OpenAI-compatible endpoint (`api.featherless.ai`). API key from `auth.json["featherless"]` or `FEATHERLESS_API_KEY`. Model: GLM 5.2.
 
 ### Startup model selection (`service-priorities.ts`)
 
