@@ -365,6 +365,9 @@ export default function modesExtension(pi: ExtensionAPI): void {
 			let active: string[] | undefined;
 			if (mode.tools && mode.tools.length > 0) {
 				active = mode.tools.filter((t) => allToolNames.includes(t));
+			} else if (mode.disabledTools && mode.disabledTools.length > 0) {
+				// Use the pre-mode snapshot, not the possibly-shrunk active set.
+				active = originalTools ?? allToolNames;
 			} else {
 				active = pi.getActiveTools();
 			}
