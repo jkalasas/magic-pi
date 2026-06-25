@@ -147,6 +147,11 @@ This extension ships with these modes in `modes/`:
   general-purpose verifier subagent per triaged issue (template at
   `skills/issue-verifier-prompt.md`); reports only issues that survive
   verification.
+- **`designer`** — design and ship production-grade frontend interfaces (the
+  impeccable design discipline, adapted as a mode). Shape → build → inspect →
+  iterate, with the AI-slop test, absolute bans, and brand/product registers.
+  Full tool access (designs AND builds), `thinking: high`. Critique is an
+  intent inside the mode (report-only unless asked to fix).
 
 Add your own by dropping a `.md` file into `modes/` and running `/reload`.
 
@@ -324,6 +329,48 @@ files under `pi-magics/`. The codebase itself stays read-only by instruction
 (the mode prompt forbids editing source files); `bash` can still mutate, so as
 with the other modes the read-only guarantee on the codebase is prompt-enforced.
 
+## The `designer` mode flow
+
+`designer` is the impeccable frontend-design discipline adapted to run as a pi
+mode (injected every turn while active). It designs AND implements
+production-grade frontend interfaces — not prototypes — and self-critiques
+against an AI-slop test. It is the design equivalent of `build`: full tool
+access, `thinking: high`.
+
+1. **Read the room** — read the existing build pipeline, design system, tokens,
+   icon set, and brand assets before designing. Use what's there; never invent a
+   parallel system. Identify the register (brand vs product). Use
+   `ctx_execute_file` for large CSS/token files.
+2. **Shape before you build** — ask clarifying questions one at a time
+   (register, audience/context, visual direction + anti-references). Compact
+   shape for clear briefs. Stop and wait for confirmation before coding.
+3. **Build to the bar** — real content, semantic HTML, deliberate spacing,
+   intentional type, full state coverage, premium motion, responsive, respect
+   the build pipeline. Detailed craft rules (color, typography, layout, motion,
+   interaction) live in `extensions/modes/skills/design-craft.md`.
+4. **Inspect and iterate** — use `describe_image` / browser automation /
+   screenshots to look at what you built; read screenshots back into context;
+   self-critique against the brief and the slop test; patch real defects. A
+   screenshot you didn't read doesn't count.
+5. **The AI slop test** — two-altitude category-reflex check: first-order
+   (guessable from category alone) and second-order (guessable from
+   category + anti-references). Rework until neither answer is obvious.
+6. **Absolute bans** — side-stripe borders, gradient text, glassmorphism as
+   default, hero-metric template, identical card grids, uppercase tracked
+   eyebrows on every section, numbered section markers as scaffolding, text
+   overflow. Match-and-refuse; rewrite the element.
+
+**Critique intent:** when the user asks to review (not build), `designer`
+switches to report-only — slop test, Nielsen heuristic quick-scan, cognitive-load
+checklist, 2–3 persona walkthroughs, and P0–P3 priority issues. The scoring
+tables and persona profiles are in `design-craft.md`. It does not fix unless
+asked.
+
+`designer` hands off to BUILD (pure mechanical implementation), BRAINSTORM (a
+large design decision needing a persisted spec → plan), or DEBUG (a design
+change that introduced a concrete bug). REVIEW hands design issues it surfaces
+to DESIGNER.
+
 ## Files
 
 - `extensions/modes/index.ts` — the extension
@@ -334,6 +381,9 @@ with the other modes the read-only guarantee on the codebase is prompt-enforced.
   by `debug` mode
 - `extensions/modes/skills/issue-verifier-prompt.md` — Phase 3 verification
   subagent prompt template used by `review` mode
+- `extensions/modes/skills/design-craft.md` — detailed craft
+  reference (color, typography, layout, motion, interaction, critique framework)
+  used by `designer` mode
 - `modes/plan.md`, `modes/brainstorm.md`, `modes/build.md`,
-  `modes/orchestrator.md`, `modes/ask.md`, `modes/debug.md`, `modes/review.md`
-  — modes
+  `modes/orchestrator.md`, `modes/ask.md`, `modes/debug.md`, `modes/review.md`,
+  `modes/designer.md` — modes
