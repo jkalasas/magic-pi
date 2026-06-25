@@ -135,7 +135,7 @@ This extension ships with these modes in `modes/`:
   Subagent-driven-development discipline, adapted to pi's `pi-magics/` plan
   store.
 - **`ask`** — answer questions and explain code without making changes.
-- **`debug`** — systematic root-cause debugging (the systematic-debugging
+- **`fix-me`** — systematic root-cause debugging (the systematic-debugging
   discipline, adapted as a mode). Four phases: root-cause investigation →
   pattern analysis → hypothesis & minimal test → implementation & hardening.
   Full tool access (investigate AND fix), `thinking: high`, uses Explore
@@ -183,10 +183,10 @@ extensions/modes/
     implementer-prompt.md           implementer subagent prompt (ORCHESTRATOR)
     spec-reviewer-prompt.md         spec compliance reviewer prompt (ORCHESTRATOR)
     code-quality-reviewer-prompt.md code quality reviewer prompt (ORCHESTRATOR)
-    root-cause-tracing.md           trace bugs to origin (DEBUG)
-    defense-in-depth.md             multi-layer validation after a fix (DEBUG)
-    condition-based-waiting.md      replace arbitrary timeouts (DEBUG)
-    find-polluter.sh                bisection script for test polluters (DEBUG)
+    root-cause-tracing.md           trace bugs to origin (FIX-ME)
+    defense-in-depth.md             multi-layer validation after a fix (FIX-ME)
+    condition-based-waiting.md      replace arbitrary timeouts (FIX-ME)
+    find-polluter.sh                bisection script for test polluters (FIX-ME)
 ```
 
 Mode files can reference agent-dir-relative paths with the `{{agent_dir}}`
@@ -240,9 +240,9 @@ do not pause between tasks unless BLOCKED or all tasks are done.
 If the work is a single focused change or not decomposable into independent
 tasks, `orchestrator` tells the user to switch to `build` mode instead.
 
-## The `debug` mode flow
+## The `fix-me` mode flow
 
-`debug` is the systematic-debugging discipline adapted to run as a pi mode
+`fix-me` is the systematic-debugging discipline adapted to run as a pi mode
 (injected every turn while active). It governs the bug-fixing process:
 
 1. **Phase 1 — Root cause investigation** (read-only): read errors fully,
@@ -264,12 +264,12 @@ tasks, `orchestrator` tells the user to switch to `build` mode instead.
 
 The Iron Law: **no fixes without root-cause investigation first.**
 
-`debug` has full tool access (it must both investigate and fix) with
+`fix-me` has full tool access (it must both investigate and fix) with
 `thinking: high`. Supporting technique files live under
 `extensions/modes/skills/` (`root-cause-tracing.md`, `defense-in-depth.md`,
 `condition-based-waiting.md`, `find-polluter.sh`), referenced from the mode
 via `{{agent_dir}}`. When the root cause + minimal fix are clear but the fix
-is broad or needs a design decision, DEBUG mode tells the user to switch to
+is broad or needs a design decision, FIX-ME mode tells the user to switch to
 BUILD (`/mode build`) or BRAINSTORM (`/mode brainstorm`).
 
 ## The `review` mode flow
@@ -302,7 +302,7 @@ it does not fix them.
 
 `review` is read-only (`disabled-tools: edit, write`, `thinking: high`). The
 controller never edits; verifiers are read-only by instruction. Confirmed
-issues are handed off to BUILD (surgical fix), DEBUG (a confirmed correctness
+issues are handed off to BUILD (surgical fix), FIX-ME (a confirmed correctness
 issue that's a live bug), BRAINSTORM (an architecture finding needing design),
 or ORCHESTRATOR (several independent fixes). REVIEW reviews existing code with
 fresh eyes — it is not a pre-merge gate for your own in-progress work (use a
@@ -367,7 +367,7 @@ tables and persona profiles are in `design-craft.md`. It does not fix unless
 asked.
 
 `designer` hands off to BUILD (pure mechanical implementation), BRAINSTORM (a
-large design decision needing a persisted spec → plan), or DEBUG (a design
+large design decision needing a persisted spec → plan), or FIX-ME (a design
 change that introduced a concrete bug). REVIEW hands design issues it surfaces
 to DESIGNER.
 
@@ -378,12 +378,12 @@ to DESIGNER.
 - `extensions/modes/skills/writing.md` — writing skill used by `brainstorm` mode
 - `extensions/modes/skills/root-cause-tracing.md`, `defense-in-depth.md`,
   `condition-based-waiting.md`, `find-polluter.sh` — debugging techniques used
-  by `debug` mode
+  by `fix-me` mode
 - `extensions/modes/skills/issue-verifier-prompt.md` — Phase 3 verification
   subagent prompt template used by `review` mode
 - `extensions/modes/skills/design-craft.md` — detailed craft
   reference (color, typography, layout, motion, interaction, critique framework)
   used by `designer` mode
 - `modes/plan.md`, `modes/brainstorm.md`, `modes/build.md`,
-  `modes/orchestrator.md`, `modes/ask.md`, `modes/debug.md`, `modes/review.md`,
+  `modes/orchestrator.md`, `modes/ask.md`, `modes/fix-me.md`, `modes/review.md`,
   `modes/designer.md` — modes

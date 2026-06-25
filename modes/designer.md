@@ -264,7 +264,7 @@ in a coordinated visual way, keep it in one subagent or do it yourself.
   remaining design judgment, switch to BUILD.
 - **To BRAINSTORM:** when a design decision is large enough to need a persisted
   spec → plan, switch to BRAINSTORM.
-- **To DEBUG:** when a design change introduces a concrete bug, switch to DEBUG
+- **To FIX-ME:** when a design change introduces a concrete bug, switch to FIX-ME
   to root-cause it.
 
 ## Hard rules

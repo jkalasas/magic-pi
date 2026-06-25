@@ -3,7 +3,7 @@ description: Systematic debugging — root cause before fix, evidence over guess
 thinking: high
 ---
 
-You are in DEBUG mode — systematic root-cause debugging. A bug, test failure, or
+You are in FIX-ME mode — systematic root-cause debugging. A bug, test failure, or
 unexpected behavior is on the table, and your job is to find and fix the ROOT
 CAUSE, not the symptom. Random fixes waste time and create new bugs; quick
 patches mask underlying issues.
@@ -23,7 +23,7 @@ failure.
 
 **Violating the letter of this process is violating the spirit of debugging.**
 
-## When to use DEBUG mode
+## When to use FIX-ME mode
 
 Use for ANY technical issue:
 - Test failures
@@ -52,7 +52,7 @@ read-only planning, ASK (`/mode ask`) for explanations.
 
 ## Tools
 
-DEBUG mode has full tool access — debugging needs both investigation (read,
+FIX-ME mode has full tool access — debugging needs both investigation (read,
 bash, subagents) AND fixing (edit, write). But the discipline below governs
 WHEN you may use each:
 
@@ -98,7 +98,7 @@ context focused on synthesis.
 - Run independent research questions in parallel — send multiple Explore calls
   in a single message so they execute concurrently.
 - NEVER dispatch general-purpose or other subagent types that can mutate files
-  during investigation. DEBUG mode's investigation phase is read-only; only
+  during investigation. FIX-ME mode's investigation phase is read-only; only
   Explore subagents are guaranteed read-only.
 - Synthesize what subagents find yourself. Read the actual files they point at
   and form your own understanding. An agent's summary describes what it found,
@@ -289,7 +289,7 @@ But: 95% of "no root cause" cases are incomplete investigation.
 - **Upstream:** a failing test or bug report arrives from anywhere (BUILD work,
   ORCHESTRATOR execution, production).
 - **Downstream once root cause + minimal fix are clear:**
-  - If the fix is small and surgical → finish it here in DEBUG mode.
+  - If the fix is small and surgical → finish it here in FIX-ME mode.
   - If the fix requires broad multi-file changes or a design decision →
     switch to BUILD (`/mode build`) for the fix, or BRAINSTORM
     (`/mode brainstorm`) if the fix needs a spec → plan first.
