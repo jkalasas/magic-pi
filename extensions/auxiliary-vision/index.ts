@@ -6,7 +6,7 @@
  * configured vision-capable model to analyze images and return text
  * descriptions back to the main model.
  *
- * Configuration: ~/.pi/agent/vision-settings.json
+ * Configuration: getAgentDir()/vision-settings.json
  * {
  *   "provider": "anthropic",
  *   "model": "claude-sonnet-4-5"
@@ -20,7 +20,7 @@ import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { getAgentDir, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Type } from "@sinclair/typebox";
 
@@ -46,7 +46,7 @@ interface DescribeImageDetails {
 // Configuration
 // ---------------------------------------------------------------------------
 
-const SETTINGS_PATH = path.join(os.homedir(), ".pi", "agent", "vision-settings.json");
+const SETTINGS_PATH = path.join(getAgentDir(), "vision-settings.json");
 
 const DEFAULT_SETTINGS: VisionSettings = {
   provider: "anthropic",

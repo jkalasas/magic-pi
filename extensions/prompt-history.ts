@@ -10,7 +10,7 @@
  * - History survives restarts, /new, /resume, /fork, and /reload.
  *
  * Storage is tracked per folder: each project (identified by its cwd) gets
- * its own file under ~/.pi/agent/prompt-history/. The filename is a sanitized
+ * its own file under getAgentDir()/prompt-history/. The filename is a sanitized
  * form of the absolute cwd so the files are human-inspectable. Each file holds
  * one JSON-encoded entry per line, oldest first (append order). Consecutive
  * duplicates are collapsed; each folder's file is capped at MAX_ENTRIES
@@ -20,23 +20,21 @@
  * that actually go to the agent.
  */
 
-import { CustomEditor, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { CustomEditor, getAgentDir, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { readFileSync } from "node:fs";
 import { appendFile, mkdir, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { KeybindingsManager } from "@earendil-works/pi-coding-agent";
 import type { EditorTheme } from "@earendil-works/pi-tui";
 import type { TUI } from "@earendil-works/pi-tui";
 
-const HISTORY_DIR = join(homedir(), ".pi", "agent", "prompt-history");
 const MAX_ENTRIES = 1000;
 
 type Entry = { text: string; ts: number };
 
 function historyFileFor(cwd: string): string {
   const name = cwd.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-  return join(HISTORY_DIR, (name || "default") + ".jsonl");
+  return join(getAgentDir(), "prompt-history", (name || "default") + ".jsonl");
 }
 
 function parseLine(line: string): Entry | null {

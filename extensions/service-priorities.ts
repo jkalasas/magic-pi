@@ -1,7 +1,7 @@
 /**
  * service-priorities extension
  * ----------------------------
- * Reads ~/.pi/agent/service_priorities.json and uses it to choose the
+ * Reads getAgentDir()/service_priorities.json and uses it to choose the
  * startup model based on per-model priority "levels" (strings, not numbers).
  *
  * Config file shape:
@@ -45,9 +45,8 @@
  * use to TIER_ORDER in your preferred order, or rely on the alphabetical fallback.
  */
 
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { getAgentDir, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { readFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import { join } from "node:path";
 
 // ---- Configuration ---------------------------------------------------------
@@ -72,12 +71,8 @@ const DEBUG = process.env.PI_SERVICE_PRIORITIES_DEBUG === "1";
 
 type ServicePriorities = Record<string, Record<string, string>>;
 
-function agentDir(): string {
-  return process.env.PI_CODING_AGENT_DIR || join(homedir(), ".pi", "agent");
-}
-
 function prioritiesPath(): string {
-  return join(agentDir(), "service_priorities.json");
+  return join(getAgentDir(), "service_priorities.json");
 }
 
 async function loadPriorities(): Promise<ServicePriorities | undefined> {
