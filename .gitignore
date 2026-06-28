@@ -16,6 +16,7 @@ trust.json
 # Runtime history / session data (private by default)
 run-history.jsonl
 prompt-history.jsonl
+prompt-history/
 sessions/
 
 # MCP caches (regenerated locally)

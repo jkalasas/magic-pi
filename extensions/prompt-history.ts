@@ -9,9 +9,12 @@
  * - Down arrow on the last visual line moves forward.
  * - History survives restarts, /new, /resume, /fork, and /reload.
  *
- * Storage: ~/.pi/agent/prompt-history.jsonl (one JSON-encoded entry per line,
- * oldest first — append order). Consecutive duplicates are collapsed; the file
- * is capped at MAX_ENTRIES entries (oldest trimmed).
+ * Storage is tracked per folder: each project (identified by its cwd) gets
+ * its own file under ~/.pi/agent/prompt-history/. The filename is a sanitized
+ * form of the absolute cwd so the files are human-inspectable. Each file holds
+ * one JSON-encoded entry per line, oldest first (append order). Consecutive
+ * duplicates are collapsed; each folder's file is capped at MAX_ENTRIES
+ * entries (oldest trimmed).
  *
  * Slash commands (input starting with "/") are not recorded — only prompts
  * that actually go to the agent.
@@ -26,10 +29,15 @@ import type { KeybindingsManager } from "@earendil-works/pi-coding-agent";
 import type { EditorTheme } from "@earendil-works/pi-tui";
 import type { TUI } from "@earendil-works/pi-tui";
 
-const HISTORY_FILE = join(homedir(), ".pi", "agent", "prompt-history.jsonl");
+const HISTORY_DIR = join(homedir(), ".pi", "agent", "prompt-history");
 const MAX_ENTRIES = 1000;
 
 type Entry = { text: string; ts: number };
+
+function historyFileFor(cwd: string): string {
+  const name = cwd.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return join(HISTORY_DIR, (name || "default") + ".jsonl");
+}
 
 function parseLine(line: string): Entry | null {
   const trimmed = line.trim();
@@ -45,10 +53,10 @@ function parseLine(line: string): Entry | null {
   return null;
 }
 
-function readHistory(): Entry[] {
+function readHistory(cwd: string): Entry[] {
   let raw: string;
   try {
-    raw = readFileSync(HISTORY_FILE, "utf8");
+    raw = readFileSync(historyFileFor(cwd), "utf8");
   } catch {
     return [];
   }
@@ -60,22 +68,23 @@ function readHistory(): Entry[] {
   return entries; // oldest first (file/append order)
 }
 
-async function appendHistory(text: string): Promise<void> {
+async function appendHistory(cwd: string, text: string): Promise<void> {
   const trimmed = text.trim();
   if (!trimmed) return;
 
-  const existing = readHistory();
+  const file = historyFileFor(cwd);
+  const existing = readHistory(cwd);
   const newest = existing[existing.length - 1];
   if (newest && newest.text === trimmed) return; // collapse consecutive dup
 
   const entry: Entry = { text: trimmed, ts: Date.now() };
-  await mkdir(dirname(HISTORY_FILE), { recursive: true });
-  await appendFile(HISTORY_FILE, JSON.stringify(entry) + "\n", "utf8");
+  await mkdir(dirname(file), { recursive: true });
+  await appendFile(file, JSON.stringify(entry) + "\n", "utf8");
 
   if (existing.length + 1 > MAX_ENTRIES) {
     const kept = [...existing, entry].slice(-MAX_ENTRIES); // drop oldest
     const data = kept.map((e) => JSON.stringify(e)).join("\n") + "\n";
-    await writeFile(HISTORY_FILE, data, "utf8");
+    await writeFile(file, data, "utf8");
   }
 }
 
@@ -85,13 +94,18 @@ async function appendHistory(text: string): Promise<void> {
  * model switching, etc.) keep working.
  */
 class HistoryEditor extends CustomEditor {
-  constructor(tui: TUI, theme: EditorTheme, keybindings: KeybindingsManager) {
+  constructor(
+    tui: TUI,
+    theme: EditorTheme,
+    keybindings: KeybindingsManager,
+    private readonly cwd: string,
+  ) {
     super(tui, theme, keybindings);
     this.preload();
   }
 
   private preload(): void {
-    const entries = readHistory(); // oldest first
+    const entries = readHistory(this.cwd); // oldest first
     // addToHistory unshifts to history[0]; replay oldest -> newest so the
     // newest prompt lands at history[0].
     for (const entry of entries) {
@@ -103,15 +117,16 @@ class HistoryEditor extends CustomEditor {
 export default function (pi: ExtensionAPI) {
   pi.on("session_start", (_event, ctx) => {
     if (ctx.mode !== "tui") return;
+    const cwd = ctx.cwd;
     ctx.ui.setEditorComponent((tui, theme, keybindings) =>
-      new HistoryEditor(tui, theme, keybindings),
+      new HistoryEditor(tui, theme, keybindings, cwd),
     );
   });
 
-  pi.on("input", async (event, _ctx) => {
+  pi.on("input", async (event, ctx) => {
     if (event.source !== "interactive") return;
     const text = event.text.trim();
     if (!text || text.startsWith("/")) return;
-    await appendHistory(text);
+    await appendHistory(ctx.cwd, text);
   });
 }
