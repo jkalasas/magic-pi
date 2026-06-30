@@ -29,6 +29,25 @@ export function registerNeuralwatt(pi: ExtensionAPI) {
 				},
 			},
 			{
+				id: "glm-5.2-flex",
+				name: "GLM 5.2 Flex",
+				input: ["text"],
+				reasoning: true,
+				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+				contextWindow: 1000000,
+				maxTokens: 131072,
+				thinkingLevelMap: {
+					minimal: null,
+					low: null,
+					medium: null,
+					high: "high",
+					xhigh: "max",
+				},
+				compat: {
+					supportsDeveloperRole: false,
+				},
+			},
+			{
 				id: "glm-5.2-short",
 				name: "GLM 5.2 Short",
 				input: ["text"],
