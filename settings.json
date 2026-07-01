@@ -8,8 +8,7 @@
     "npm:pi-mcp-adapter",
     "npm:pi-web-access",
     "npm:pi-rewind",
-    "npm:pi-token-speed",
-    "npm:context-mode"
+    "npm:pi-token-speed"
   ],
   "defaultProvider": "cloudflare",
   "defaultModel": "deepseek-v4-flash",
