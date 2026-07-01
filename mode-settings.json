@@ -16,7 +16,7 @@
 		"thinking": "xhigh"
 	},
 	"fix-me": {
-		"model": "cloudflare/glm-5.2",
+		"model": "cloudflare/deepseek-v4-pro",
 		"thinking": "xhigh"
 	},
 	"orchestrator": {
