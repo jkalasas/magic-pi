@@ -4,10 +4,11 @@ Adds switchable agent modes to pi, similar to opencode's Plan / Build modes.
 
 ## How it works
 
-Modes are Markdown files in a `modes/` directory:
+Modes are Markdown files:
 
+- **Bundled with the extension:** `<PI_CODING_AGENT_DIR>/extensions/modes/modes/*.md`  (shipped modes)
 - **Global:** `<PI_CODING_AGENT_DIR>/modes/*.md`  (i.e. `getAgentDir()/modes`)
-- **Project-local:** `<cwd>/.pi/modes/*.md`  (overrides globals with the same name)
+- **Project-local:** `<cwd>/.pi/modes/*.md`  (overrides globals and extension-bundled modes with the same name)
 
 The filename (without `.md`) is the mode name. There is always a built-in **`pi`**
 mode that is the default pi behavior — it loads nothing and injects no extra
@@ -122,7 +123,7 @@ the side chat; running `/btw` again starts a fresh one.
 
 ## Examples
 
-This extension ships with these modes in `modes/`:
+This extension ships with these modes in `extensions/modes/modes/`:
 
 - **`plan`** — read-only planning (opencode-style). Analyze the codebase
   directly and via Explore subagents, ask clarifying questions, then present a
@@ -153,7 +154,7 @@ This extension ships with these modes in `modes/`:
   Full tool access (designs AND builds), `thinking: high`. Critique is an
   intent inside the mode (report-only unless asked to fix).
 
-Add your own by dropping a `.md` file into `modes/` and running `/reload`.
+Add your own by dropping a `.md` file into `<cwd>/.pi/modes/` and running `/reload`, or into `<PI_CODING_AGENT_DIR>/modes/` if you want them shared across projects.
 
 ## What each mode does when activated
 
@@ -178,6 +179,17 @@ The extension lives in a folder so it can bundle its own supporting skills:
 ```
 extensions/modes/
   index.ts            the extension (folder entry point)
+  btw.ts              /btw side-chat modal
+  modes.README.md     this file
+  modes/              mode definition files (*.md)
+    ask.md
+    brainstorm.md
+    build.md
+    designer.md
+    fix-me.md
+    orchestrator.md
+    plan.md
+    review.md
   skills/
     writing.md                      writing skill used by BRAINSTORM mode
     implementer-prompt.md           implementer subagent prompt (ORCHESTRATOR)
@@ -375,6 +387,10 @@ to DESIGNER.
 
 - `extensions/modes/index.ts` — the extension
 - `extensions/modes/btw.ts` — `/btw` side-chat modal (RPC sub-session client + overlay UI)
+- `extensions/modes/modes/` — mode definition files (`*.md`):
+  - `plan.md`, `brainstorm.md`, `build.md`,
+    `orchestrator.md`, `ask.md`, `fix-me.md`, `review.md`,
+    `designer.md`
 - `extensions/modes/skills/writing.md` — writing skill used by `brainstorm` mode
 - `extensions/modes/skills/root-cause-tracing.md`, `defense-in-depth.md`,
   `condition-based-waiting.md`, `find-polluter.sh` — debugging techniques used
@@ -384,6 +400,3 @@ to DESIGNER.
 - `extensions/modes/skills/design-craft.md` — detailed craft
   reference (color, typography, layout, motion, interaction, critique framework)
   used by `designer` mode
-- `modes/plan.md`, `modes/brainstorm.md`, `modes/build.md`,
-  `modes/orchestrator.md`, `modes/ask.md`, `modes/fix-me.md`, `modes/review.md`,
-  `modes/designer.md` — modes

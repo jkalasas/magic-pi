@@ -7,8 +7,9 @@
  * the `/mode` command.
  *
  * Mode directories (merged, project takes precedence):
- *   <PI_CODING_AGENT_DIR>/modes/*.md   (global, i.e. getAgentDir()/modes)
- *   <cwd>/.pi/modes/*.md               (project-local)
+ *   <PI_CODING_AGENT_DIR>/modes/*.md                         (global, i.e. getAgentDir()/modes)
+ *   <PI_CODING_AGENT_DIR>/extensions/modes/modes/*.md        (bundled with the extension)
+ *   <cwd>/.pi/modes/*.md                                     (project-local)
  *
  * The filename (without `.md`) is the mode name. There is always a built-in
  * mode called `pi` which is the default pi behavior — it loads nothing and
@@ -124,6 +125,76 @@ interface Mode {
 
 interface PersistedState {
 	activeMode: string;
+}
+
+/** Per-mode default config loaded from mode-settings.json. */
+interface ModeDefaultConfig {
+	model?: ModeModel;
+	thinking?: ThinkingLevel;
+}
+
+/**
+ * mode-settings.json value: either a "provider/model" string or an object
+ * with optional `model` and `thinking` fields.
+ */
+type ModeSettingsValue = string | { model?: string; thinking?: ThinkingLevel };
+type ModeSettings = Record<string, ModeSettingsValue>;
+
+/**
+ * Parse settings from a single mode-settings.json file into the result map.
+ * Entries already in the map are NOT overwritten (first wins).
+ */
+function parseModeSettingsFile(filepath: string, result: Map<string, ModeDefaultConfig>): void {
+	if (!existsSync(filepath)) return;
+	try {
+		const raw = readFileSync(filepath, "utf-8");
+		const settings = JSON.parse(raw) as ModeSettings;
+		for (const [name, value] of Object.entries(settings)) {
+			const key = name.toLowerCase();
+			if (result.has(key)) continue;
+			const cfg: ModeDefaultConfig = {};
+			if (typeof value === "string") {
+				const slash = value.indexOf("/");
+				if (slash > 0 && slash < value.length - 1) {
+					cfg.model = {
+						provider: value.slice(0, slash).trim(),
+						id: value.slice(slash + 1).trim(),
+					};
+				}
+			} else if (value && typeof value === "object") {
+				if (typeof value.model === "string") {
+					const slash = value.model.indexOf("/");
+					if (slash > 0 && slash < value.model.length - 1) {
+						cfg.model = {
+							provider: value.model.slice(0, slash).trim(),
+							id: value.model.slice(slash + 1).trim(),
+						};
+					}
+				}
+				if (value.thinking) {
+					cfg.thinking = value.thinking;
+				}
+			}
+			result.set(key, cfg);
+		}
+	} catch (err) {
+		console.error(`[modes] Failed to load ${filepath}: ${err}`);
+	}
+}
+
+/**
+ * Load per-mode defaults from mode-settings.json.
+ * Merges two locations (global then project-local, project wins):
+ *   - <getAgentDir()>/mode-settings.json          (global)
+ *   - <cwd>/.pi/mode-settings.json                 (project override)
+ */
+function loadModeSettings(cwd: string): Map<string, ModeDefaultConfig> {
+	const result = new Map<string, ModeDefaultConfig>();
+	// Global: agent dir root
+	parseModeSettingsFile(join(getAgentDir(), "mode-settings.json"), result);
+	// Project: cwd/.pi/mode-settings.json overrides global
+	parseModeSettingsFile(join(cwd, ".pi", "mode-settings.json"), result);
+	return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -249,14 +320,17 @@ function loadModesFromDir(dir: string): Mode[] {
  */
 function loadModes(cwd: string): Mode[] {
 	const globalDir = join(getAgentDir(), "modes");
+	const extensionDir = join(getAgentDir(), "extensions", "modes", "modes");
 	const projectDir = join(cwd, ".pi", "modes");
 
 	const globalModes = loadModesFromDir(globalDir);
+	const extensionModes = loadModesFromDir(extensionDir);
 	const projectModes = loadModesFromDir(projectDir);
 
-	// Merge: project modes override global modes with the same name.
+	// Merge: project modes override extension modes and global modes with the same name.
 	const byName = new Map<string, Mode>();
 	for (const m of globalModes) byName.set(m.name.toLowerCase(), m);
+	for (const m of extensionModes) byName.set(m.name.toLowerCase(), m);
 	for (const m of projectModes) byName.set(m.name.toLowerCase(), m);
 
 	const merged = Array.from(byName.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -298,6 +372,8 @@ class ModeEditor extends CustomEditor {
 export default function modesExtension(pi: ExtensionAPI): void {
 	let modes: Mode[] = [PI_MODE];
 	let activeMode: Mode = PI_MODE;
+	// Per-mode defaults from mode-settings.json (loaded on session start).
+	let modeDefaults: Map<string, ModeDefaultConfig> = new Map();
 	// Snapshot of tools/thinking/model captured before the first non-pi mode is
 	// applied, so switching back to `pi` restores the user's original config.
 	let originalTools: string[] | undefined;
@@ -315,6 +391,7 @@ export default function modesExtension(pi: ExtensionAPI): void {
 
 	function refreshModes(cwd: string): void {
 		modes = loadModes(cwd);
+		modeDefaults = loadModeSettings(cwd);
 		// Keep activeMode valid if it still exists; otherwise fall back to pi.
 		const stillExists = modes.find((m) => m.name.toLowerCase() === activeMode.name.toLowerCase());
 		activeMode = stillExists ?? PI_MODE;
@@ -380,9 +457,16 @@ export default function modesExtension(pi: ExtensionAPI): void {
 			if (mode.thinking) {
 				pi.setThinkingLevel(mode.thinking);
 			}
-			if (mode.model) {
-				const target = ctx.modelRegistry.find(mode.model.provider, mode.model.id);
+			// Model resolution: frontmatter > mode-settings.json > no change.
+			const defaults = modeDefaults.get(mode.name.toLowerCase());
+			const effectiveModel = mode.model ?? defaults?.model;
+			if (effectiveModel) {
+				const target = ctx.modelRegistry.find(effectiveModel.provider, effectiveModel.id);
 				if (target) void pi.setModel(target);
+			}
+			// Thinking resolution: frontmatter > mode-settings.json > no change.
+			if (!mode.thinking && defaults?.thinking) {
+				pi.setThinkingLevel(defaults.thinking);
 			}
 		}
 

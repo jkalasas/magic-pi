@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.79.10",
+  "lastChangelogVersion": "0.80.3",
   "npmCommand": [
     "bun"
   ],
@@ -11,8 +11,8 @@
     "npm:pi-token-speed",
     "npm:context-mode"
   ],
-  "defaultProvider": "fireworks",
-  "defaultModel": "accounts/fireworks/models/glm-5p2",
+  "defaultProvider": "cloudflare",
+  "defaultModel": "deepseek-v4-flash",
   "defaultThinkingLevel": "xhigh",
   "theme": "dark",
   "hideThinkingBlock": false

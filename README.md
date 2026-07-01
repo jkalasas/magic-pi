@@ -32,12 +32,11 @@ magic-pi/
 │   ├── service-priorities.ts  # startup model selection by priority tier
 │   ├── magic-todo.ts          # session-persisted todo tool + /todos command (tree-aware)
 │   ├── auxiliary-vision/      # describe_image tool for non-vision models
-│   └── modes/                 # the modes extension + its bundled skills
+│   └── modes/                 # the modes extension + bundled mode definitions + skills
 │       ├── index.ts
 │       ├── modes.README.md    # detailed modes documentation
+│       ├── modes/             # mode definition files (*.md — plan/build/ask/...)
 │       └── skills/            # prompts/templates used by the modes
-│
-├── modes/                     # Markdown mode definitions (plan/build/ask/...)
 ├── prompts/                   # (empty) custom prompt templates
 ├── pi-magics/                 # (gitignored) spec/plan artifacts from brainstorm mode
 │   ├── specs/
@@ -95,7 +94,7 @@ Adds a `describe_image` tool that delegates to a vision-capable model when the a
 A session-scoped todo list whose state is persisted in tool-result details (in the session file). Exposes a `todo` tool for the LLM (actions: list, add, toggle, delete, clear) and a `/todos` slash command for the user. State is reconstructed from the current branch on load, reload, resume, fork, and `/tree` navigation, so going back to an earlier point in the conversation tree reverts the todos to that point. `/new` starts empty.
 
 ### `modes/`
-The flagship extension: switchable agent modes (opencode-style Plan/Build, plus more). See `extensions/modes/modes.README.md` for the full spec. Ships with these modes in `modes/`:
+The flagship extension: switchable agent modes (opencode-style Plan/Build, plus more). See `extensions/modes/modes.README.md` for the full spec. Ships with these modes in `extensions/modes/modes/`:
 
 | Mode          | Purpose                                                        | Access      |
 |---------------|----------------------------------------------------------------|-------------|
@@ -134,7 +133,7 @@ Usage: `Tab` (empty editor) cycles modes · `/mode` opens the selector · `/mode
 
 ## What's shared vs. private
 
-Kept in git (shareable): `settings.json`, `models.json`, `keybindings.json`, `extensions/`, `modes/`, `npm/package.json`, `*.json` config like `vision-settings.json`, `web-fetch.json`, `service_priorities.json`.
+Kept in git (shareable): `settings.json`, `models.json`, `keybindings.json`, `extensions/`, `npm/package.json`, `*.json` config like `vision-settings.json`, `web-fetch.json`, `service_priorities.json`.
 
 Gitignored (private / machine-local): `auth.json`, `trust.json`, `sessions/`, `run-history.jsonl`, `mcp-cache.json`, `mcp-npx-cache.json`, `mcp-onboarding.json`, `mcp-oauth/`, `pi-magics/`, `npm/node_modules/`.
 

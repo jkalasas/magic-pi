@@ -1,0 +1,34 @@
+{
+	"ask": {
+		"model": "cloudflare/deepseek-v4-flash",
+		"thinking": "high"
+	},
+	"brainstorm": {
+		"model": "cloudflare/glm-5.2",
+		"thinking": "xhigh"
+	},
+	"build": {
+		"model": "cloudflare/deepseek-v4-pro",
+		"thinking": "xhigh"
+	},
+	"designer": {
+		"model": "cloudflare/deepseek-v4-flash",
+		"thinking": "xhigh"
+	},
+	"fix-me": {
+		"model": "cloudflare/glm-5.2",
+		"thinking": "xhigh"
+	},
+	"orchestrator": {
+		"model": "cloudflare/deepseek-v4-pro",
+		"thinking": "xhigh"
+	},
+	"plan": {
+		"model": "cloudflare/glm-5.2",
+		"thinking": "xhigh"
+	},
+	"review": {
+		"model": "cloudflare/glm-5.2",
+		"thinking": "xhigh"
+	}
+}
