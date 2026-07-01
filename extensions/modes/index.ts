@@ -446,7 +446,7 @@ export default function modesExtension(pi: ExtensionAPI): void {
 				// Use the pre-mode snapshot, not the possibly-shrunk active set.
 				active = originalTools ?? allToolNames;
 			} else {
-				active = pi.getActiveTools();
+				active = originalTools ?? pi.getActiveTools();
 			}
 			if (mode.disabledTools && mode.disabledTools.length > 0) {
 				active = active.filter((t) => !mode.disabledTools!.includes(t));
@@ -454,19 +454,17 @@ export default function modesExtension(pi: ExtensionAPI): void {
 			if (active && active.length > 0) {
 				pi.setActiveTools(active);
 			}
-			if (mode.thinking) {
-				pi.setThinkingLevel(mode.thinking);
-			}
-			// Model resolution: frontmatter > mode-settings.json > no change.
 			const defaults = modeDefaults.get(mode.name.toLowerCase());
-			const effectiveModel = mode.model ?? defaults?.model;
+			// Model resolution: mode-settings.json > frontmatter > no change.
+			const effectiveModel = defaults?.model ?? mode.model;
 			if (effectiveModel) {
 				const target = ctx.modelRegistry.find(effectiveModel.provider, effectiveModel.id);
 				if (target) void pi.setModel(target);
 			}
-			// Thinking resolution: frontmatter > mode-settings.json > no change.
-			if (!mode.thinking && defaults?.thinking) {
-				pi.setThinkingLevel(defaults.thinking);
+			// Thinking resolution: mode-settings.json > frontmatter > no change.
+			const effectiveThinking = defaults?.thinking ?? mode.thinking;
+			if (effectiveThinking) {
+				pi.setThinkingLevel(effectiveThinking);
 			}
 		}
 
