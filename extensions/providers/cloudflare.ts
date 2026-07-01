@@ -125,42 +125,6 @@ export function registerCloudflare(pi: ExtensionAPI) {
 				contextWindow: 1000000,
 				maxTokens: 128000			
 			},
-			{
-				id: "deepseek-v4-flash-free",
-				name: "DeepSeek V4 Flash Free",
-				baseUrl:
-					"https://gateway.ai.cloudflare.com/v1/bc4c021c0b951028aab5fe08f7c48af9/fireworks/custom-oc/zen/v1",
-				input: ["text"],
-				reasoning: true,
-				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-				contextWindow: 200000,
-				maxTokens: 128000,
-				thinkingLevelMap: {
-					minimal: null,
-					low: null,
-					medium: null,
-					high: "high",
-					xhigh: null,
-				}
-			},
-			{
-				id: "mimo-v2.5-free",
-				name: "MiMo V2.5 Free",
-				baseUrl:
-					"https://gateway.ai.cloudflare.com/v1/bc4c021c0b951028aab5fe08f7c48af9/fireworks/custom-oc/zen/v1",
-				input: ["text", "image"],
-				reasoning: true,
-				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-				contextWindow: 200000,
-				maxTokens: 131072,
-				thinkingLevelMap: {
-					minimal: null,
-					low: null,
-					medium: null,
-					high: "high",
-					xhigh: null,
-				}
-			},
 		],
 	});
 }
