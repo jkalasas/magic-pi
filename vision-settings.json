@@ -1,4 +1,4 @@
 {
-  "provider": "fireworks",
-  "model": "accounts/fireworks/routers/kimi-k2p6-fast"
+  "provider": "cloudflare",
+  "model": "mimo-v2.5"
 }

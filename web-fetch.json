@@ -1,4 +1,4 @@
 {
-  "model": "ollama/deepseek-v4-flash:cloud",
+  "model": "cloudflare/mimo-v2.5",
   "thinkingLevel": "xhigh"
 }
